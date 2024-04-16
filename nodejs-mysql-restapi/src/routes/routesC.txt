@@ -1,0 +1,102 @@
+import { Router } from "express";
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+import { 
+        obtenerComunicados, 
+        obtenerComunicado, 
+        crearComunicado, 
+        actualizarComunicado, 
+        eliminarComunicado,
+        obtenerCiudades,
+        obtenerMarcas
+    } 
+from "../controllers/comunicado.controller.js"
+
+const router = Router();
+
+// // Directorio donde se guardarán las imágenes
+// const uploadDirectory = 'uploads/';
+
+// // Configuración de multer para manejar la carga de archivos
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     // Verificar si el directorio de destino existe, si no, crearlo
+//     if (!fs.existsSync(uploadDirectory)) {
+//       fs.mkdirSync(uploadDirectory, { recursive: true });
+//     }
+//     cb(null, uploadDirectory);
+//   },
+//   filename: (req, file, cb) => {
+//     cb(null, file.originalname); // Nombre original del archivo
+//   }
+// });
+
+// const upload = multer({ storage: storage });
+
+// Directorio donde se guardarán las imágenes
+const uploadDirectory = 'uploads/';
+
+// Configuración de multer para manejar la carga de archivos
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // Verificar si el directorio de destino existe, si no, crearlo
+    if (!fs.existsSync(uploadDirectory)) {
+      fs.mkdirSync(uploadDirectory, { recursive: true });
+    }
+    cb(null, uploadDirectory);
+  },
+  filename: (req, file, cb) => {
+    cb(null, file.originalname); // Nombre original del archivo
+  }
+});
+
+// Middleware de multer para cargar la portada
+const uploadPortada = multer({ storage: storage }).single('portada');
+
+// Middleware de multer para cargar el archivo PDF
+const uploadPDF = multer({ storage: storage }).single('pdf');
+
+// Ruta para manejar la carga de archivos
+router.post('/comunicados', (req, res) => {
+  // Primero, cargar la portada
+  uploadPortada(req, res, (err) => {
+    if (err) {
+      // Manejar errores de carga de portada
+      return res.status(500).json({ error: 'Error al cargar la portada' });
+    }
+    
+    // Luego, cargar el archivo PDF
+    uploadPDF(req, res, (err) => {
+      if (err) {
+        // Manejar errores de carga de PDF
+        return res.status(500).json({ error: 'Error al cargar el PDF' });
+      }
+      
+      // Si ambos archivos se cargaron correctamente, continuar con la lógica para crear el comunicado
+      crearComunicado(req, res);
+    });
+  });
+});
+
+
+router.get("/comunicados", obtenerComunicados)
+
+router.get("/comunicados/:id", obtenerComunicado)
+
+// Ruta para manejar la carga de archivos
+router.post('/comunicados', upload.single('portada'), crearComunicado);
+
+// Actualiza total o parcialmente un registro 
+router.patch("/comunicados/:id", actualizarComunicado)
+
+router.delete("/comunicados/:id", eliminarComunicado)
+
+// ATC_SUCURSAL 
+router.get("/ciudades", obtenerCiudades)
+router.get("/ciudades/ciudad", obtenerCiudades)
+router.get("/marcas", obtenerMarcas)
+
+export default router;
+// import { comunicadosRoutes } from './routes/comunicados.routes.js'
