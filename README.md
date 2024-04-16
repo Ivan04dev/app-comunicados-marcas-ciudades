@@ -1,0 +1,1 @@
+App funcional, filtra las ciudades por marca, al inicar la app todas las ciudades, regiones y divisiones de esa marca están seleccionadas, es posible deseleccionar por division y región y se actualiza el arreglo
