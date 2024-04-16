@@ -1,0 +1,90 @@
+import { useState, useEffect } from 'react';
+import axios from 'axios';
+
+function App() {
+  const [marcaSeleccionada, setMarcaSeleccionada] = useState('');
+  const [ciudades, setCiudades] = useState({});
+  const [ciudadesSeleccionadas, setCiudadesSeleccionadas] = useState([]);
+
+  const handleChangeMarca = async (event) => {
+    const value = event.target.value;
+    setMarcaSeleccionada(value); // Actualiza el estado con el valor seleccionado
+    try {
+      if (value === 'nacional') {
+        const response = await axios.get('http://localhost:3000/ciudades');
+        const ciudadesAgrupadas = organizarCiudades(response.data);
+        setCiudades(ciudadesAgrupadas);
+      } else {
+        const response = await axios.get(`http://localhost:3000/ciudades?marca=${value}`);
+        const ciudadesAgrupadas = organizarCiudades(response.data);
+        setCiudades(ciudadesAgrupadas);
+      }
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  const organizarCiudades = (ciudades) => {
+    const ciudadesAgrupadas = {};
+    ciudades.forEach(ciudad => {
+      const { division, region } = ciudad;
+      if (!ciudadesAgrupadas[division]) {
+        ciudadesAgrupadas[division] = {};
+      }
+      if (!ciudadesAgrupadas[division][region]) {
+        ciudadesAgrupadas[division][region] = [];
+      }
+      ciudadesAgrupadas[division][region].push(ciudad);
+    });
+    return ciudadesAgrupadas;
+  };
+
+  useEffect(() => {
+    handleChangeMarca({ target: { value: marcaSeleccionada } });
+  }, [marcaSeleccionada]);
+
+  const handleCheckboxChangeCiudades = (event) => {
+    const { value, checked } = event.target;
+
+    if (checked) {
+      setCiudadesSeleccionadas(prevSelecciones => [...prevSelecciones, value]);
+    } else {
+      setCiudadesSeleccionadas(prevSelecciones => prevSelecciones.filter(ciudad => ciudad !== value));
+    }
+  };
+
+  return (
+    <div className="container">
+      <form>
+        {/* Renderizar las divisiones, regiones y ciudades */}
+        {Object.keys(ciudades).map((division) => (
+          <div key={division}>
+            <hr />
+            <input type='checkbox' value={division} onChange={handleCheckboxChangeCiudades} /> {' '}
+            <label htmlFor="" style={{ fontSize: "20px", fontWeight:"bold" }}>{division}</label>
+            <div className="row">
+              {Object.keys(ciudades[division]).map((region) => (
+                <div key={region} className="col-md-4">
+                  <input type='checkbox' value={region} onChange={handleCheckboxChangeCiudades} /> {' '}
+                  <label htmlFor="" style={{ fontSize: "16px", fontWeight:"bold" }}>{region}</label>
+                  <ul>
+                    {ciudades[division][region].map((ciudad) => (
+                      <li key={ciudad.id}>
+                        <input type='checkbox' value={ciudad.ciudad} onChange={handleCheckboxChangeCiudades} /> {' '}
+                        <label htmlFor="">{ciudad.ciudad}</label>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+        {/* Muestra las ciudades seleccionadas */}
+        <p>Ciudades seleccionadas: {ciudadesSeleccionadas.join(', ')}</p>
+      </form>
+    </div>
+  );
+}
+
+export default App;
